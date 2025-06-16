@@ -1,10 +1,15 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
+
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type apiConfig struct {
@@ -13,6 +18,13 @@ type apiConfig struct {
 
 func main() {
 	const port = "8080"
+	godotenv.Load()
+
+	dbUrl := os.Getenv("DB_URL")
+	_, err := sql.Open("postgres", dbUrl)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	cfg := apiConfig{
 		fileserverHits: atomic.Int32{},
