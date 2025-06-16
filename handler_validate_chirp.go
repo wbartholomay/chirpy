@@ -27,30 +27,22 @@ func ValidateChirpHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := decoder.Decode(&params); err != nil {
 		log.Printf("Error decoding parameters: %v\n", err)
-		httphelper.RespondWithError(w, 500, "Something went wrong")
+		httphelper.RespondWithError(w, 500, "Something went wrong", err)
 		return
 	}
 
 	if len(params.Body) > 140 {
-		httphelper.RespondWithError(w, 400, "Chirp is too long")
+		httphelper.RespondWithError(w, 400, "Chirp is too long", nil)
 		return
 	}
 
 	w.WriteHeader(200)
 	cleanedBody := getCleanedBody(params.Body, profanity)
-
 	successParams := resSuccess{
 		CleanedBody: cleanedBody,
 	}
 
-	resData, err := json.Marshal(successParams) 
-	if err != nil {
-		log.Printf("Error encoding response: %v\n", err)
-		httphelper.RespondWithError(w, 500, "Something went wrong")
-		return
-	}
-
-	w.Write(resData)
+	httphelper.RespondWithJSON(w, 200, successParams)
 }
 
 func getCleanedBody(body string, profanity []string) string {
