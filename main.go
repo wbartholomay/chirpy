@@ -10,10 +10,13 @@ import (
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/wbartholomay/chirpy/internal/database"
 )
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	db *database.Queries
+	platform string
 }
 
 func main() {
@@ -21,13 +24,17 @@ func main() {
 	godotenv.Load()
 
 	dbUrl := os.Getenv("DB_URL")
-	_, err := sql.Open("postgres", dbUrl)
+	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	dbQueries := database.New(db)
+
 	cfg := apiConfig{
 		fileserverHits: atomic.Int32{},
+		db : dbQueries,
+		platform: os.Getenv("PLATFORM"),
 	}
 
 	mux := http.NewServeMux()
@@ -37,8 +44,9 @@ func main() {
 	mux.Handle("/app/", cfg.middlewareMetricsInc(fileServerHandler))
 	mux.HandleFunc("GET /api/healthz", ReadinessHandler)
 	mux.HandleFunc("POST /api/validate_chirp", ValidateChirpHandler)
+	mux.HandleFunc("POST /api/users", cfg.CreateUserHandler)
 	mux.HandleFunc("GET /admin/metrics", cfg.MetricsHandler)
-	mux.HandleFunc("POST /admin/reset", cfg.ResetMetricsHandler)
+	mux.HandleFunc("POST /admin/reset", cfg.ResetHandler)
 
 	server := &http.Server{
 		Addr: ":" + port,
@@ -76,6 +84,11 @@ func (cfg *apiConfig) MetricsHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(([]byte)(hitsStr))
 }
 
-func (cfg *apiConfig) ResetMetricsHandler(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) ResetHandler(w http.ResponseWriter, req *http.Request) {
+	if cfg.platform != "dev" {
+		respondWithError(w, 403, "Forbidden", nil)
+	}
+
 	cfg.fileserverHits.Store(0)
+	cfg.db.DeleteAllUsers(req.Context())
 }

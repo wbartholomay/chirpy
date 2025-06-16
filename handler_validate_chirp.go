@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-
-	"github.com/wbartholomay/chirpy/internal/httphelper"
 )
 
 
@@ -27,12 +25,12 @@ func ValidateChirpHandler(w http.ResponseWriter, req *http.Request) {
 
 	if err := decoder.Decode(&params); err != nil {
 		log.Printf("Error decoding parameters: %v\n", err)
-		httphelper.RespondWithError(w, 500, "Something went wrong", err)
+		respondWithError(w, 500, "Something went wrong", err)
 		return
 	}
 
 	if len(params.Body) > 140 {
-		httphelper.RespondWithError(w, 400, "Chirp is too long", nil)
+		respondWithError(w, 400, "Chirp is too long", nil)
 		return
 	}
 
@@ -42,7 +40,7 @@ func ValidateChirpHandler(w http.ResponseWriter, req *http.Request) {
 		CleanedBody: cleanedBody,
 	}
 
-	httphelper.RespondWithJSON(w, 200, successParams)
+	respondWithJSON(w, 200, successParams)
 }
 
 func getCleanedBody(body string, profanity []string) string {
