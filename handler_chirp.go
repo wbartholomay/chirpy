@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/wbartholomay/chirpy/internal/database"
 )
 
-func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Request) error {
 	type parameters struct {
 		Body string `json:"body"`
 		UserID uuid.UUID `json:"user_id"`
@@ -22,14 +21,16 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 	params := parameters{}
 
 	if err := decoder.Decode(&params); err != nil {
-		log.Printf("Error decoding parameters: %v\n", err)
-		respondWithError(w, 500, "Something went wrong", err)
-		return
+		return getDefaultApiError(err)
 	}
 
 	cleanedChirp, err := validateAndCleanChirp(w, params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error(), err)
+		return APIError{
+			Status: http.StatusBadRequest,
+			Msg: err.Error(),
+		}
 	}
 
 
@@ -38,14 +39,14 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 		UserID: params.UserID,
 	})
 	if err != nil {
-		respondWithDefaultError(w, err)
+		return getDefaultApiError(err)
 	}
 
 	chirp := getChirpFromDBChirp(dbChirp)
 
 
 	respondWithJSON(w, http.StatusCreated, chirp)
-	
+	return nil
 }
 
 func validateAndCleanChirp(w http.ResponseWriter, body string) (string, error){

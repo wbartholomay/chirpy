@@ -42,11 +42,11 @@ func main() {
 	fileServerHandler := http.StripPrefix("/app", http.FileServer(http.Dir(".")))
 
 	mux.Handle("/app/", cfg.middlewareMetricsInc(fileServerHandler))
-	mux.HandleFunc("GET /api/healthz", ReadinessHandler)
-	mux.HandleFunc("POST /api/chirps", cfg.CreateChirpHandler)
-	mux.HandleFunc("POST /api/users", cfg.CreateUserHandler)
-	mux.HandleFunc("GET /admin/metrics", cfg.MetricsHandler)
-	mux.HandleFunc("POST /admin/reset", cfg.ResetHandler)
+	mux.HandleFunc("GET /api/healthz", makeHandler(ReadinessHandler))
+	mux.HandleFunc("POST /api/chirps", makeHandler(cfg.CreateChirpHandler))
+	mux.HandleFunc("POST /api/users", makeHandler(cfg.CreateUserHandler))
+	mux.HandleFunc("GET /admin/metrics", makeHandler(cfg.MetricsHandler))
+	mux.HandleFunc("POST /admin/reset", makeHandler(cfg.ResetHandler))
 
 	server := &http.Server{
 		Addr: ":" + port,
@@ -66,14 +66,15 @@ func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
 }
 
 
-func ReadinessHandler(w http.ResponseWriter, req *http.Request) {
+func ReadinessHandler(w http.ResponseWriter, req *http.Request) error{
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
 
 	w.Write(([]byte)("OK"))
+	return nil
 }
 
-func (cfg *apiConfig) MetricsHandler(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) MetricsHandler(w http.ResponseWriter, req *http.Request) error{
 	hitsStr := fmt.Sprintf(`<html>
 		<body>
 			<h1>Welcome, Chirpy Admin</h1>
@@ -82,13 +83,15 @@ func (cfg *apiConfig) MetricsHandler(w http.ResponseWriter, req *http.Request) {
 		</html>`, cfg.fileserverHits.Load())
 
 	w.Write(([]byte)(hitsStr))
+	return nil
 }
 
-func (cfg *apiConfig) ResetHandler(w http.ResponseWriter, req *http.Request) {
+func (cfg *apiConfig) ResetHandler(w http.ResponseWriter, req *http.Request) error{
 	if cfg.platform != "dev" {
 		respondWithError(w, 403, "Forbidden", nil)
 	}
 
 	cfg.fileserverHits.Store(0)
 	cfg.db.DeleteAllUsers(req.Context())
+	return nil
 }
