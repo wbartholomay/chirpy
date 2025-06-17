@@ -26,7 +26,6 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 
 	cleanedChirp, err := validateAndCleanChirp(w, params.Body)
 	if err != nil {
-		respondWithError(w, http.StatusBadRequest, err.Error(), err)
 		return APIError{
 			Status: http.StatusBadRequest,
 			Msg: err.Error(),

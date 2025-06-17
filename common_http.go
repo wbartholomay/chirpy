@@ -31,21 +31,21 @@ func makeHandler(h apiFunc) http.HandlerFunc {
 			e, ok := err.(APIError)
 			if !ok {
 				slog.Error("API failed with non API error.", "err", err)
-				respondWithError(w, 500, "Something went wrong.", err)
+				respondWithError(w, 500, "Something went wrong.")
 			} else {
 				slog.Error("API error", "err", e, "status", e.Status)
 				switch e.Status{
 					case 500:
-						respondWithError(w, 500, "Something went wrong.", err)
+						respondWithError(w, 500, "Something went wrong.")
 					default:
-						respondWithError(w, e.Status, err.Error(), err)
+						respondWithError(w, e.Status, err.Error())
 				}
 			}
 		}
 	}
 }
 
-func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
+func respondWithError(w http.ResponseWriter, code int, msg string) {
 	type errorResponse struct {
 		Error string `json:"error"`
 	}

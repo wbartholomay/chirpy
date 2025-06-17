@@ -88,7 +88,10 @@ func (cfg *apiConfig) MetricsHandler(w http.ResponseWriter, req *http.Request) e
 
 func (cfg *apiConfig) ResetHandler(w http.ResponseWriter, req *http.Request) error{
 	if cfg.platform != "dev" {
-		respondWithError(w, 403, "Forbidden", nil)
+		return APIError{
+			Status: 403,
+			Msg: "Forbidden",
+		}
 	}
 
 	cfg.fileserverHits.Store(0)
