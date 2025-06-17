@@ -47,6 +47,7 @@ func main() {
 	mux.HandleFunc("GET /api/chirps", makeHandler(cfg.GetAllChirpsHandler))
 	mux.HandleFunc("GET /api/chirps/{chirp_id}", makeHandler(cfg.GetChirpByIdHandler))
 	mux.HandleFunc("POST /api/users", makeHandler(cfg.CreateUserHandler))
+	mux.HandleFunc("POST /api/login", makeHandler(cfg.LoginUserHandler))
 	mux.HandleFunc("GET /admin/metrics", makeHandler(cfg.MetricsHandler))
 	mux.HandleFunc("POST /admin/reset", makeHandler(cfg.ResetHandler))
 

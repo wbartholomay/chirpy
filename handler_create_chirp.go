@@ -24,7 +24,7 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 		return getDefaultApiError(err)
 	}
 
-	cleanedChirp, err := validateAndCleanChirp(w, params.Body)
+	cleanedChirp, err := validateAndCleanChirp(params.Body)
 	if err != nil {
 		return APIError{
 			Status: http.StatusBadRequest,
@@ -48,7 +48,7 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 	return nil
 }
 
-func validateAndCleanChirp(w http.ResponseWriter, body string) (string, error){
+func validateAndCleanChirp(body string) (string, error){
 	
 	if len(body) > 140 {
 		return "", errors.New("chirp is too long")
