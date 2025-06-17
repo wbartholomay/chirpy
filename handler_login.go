@@ -1,9 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/wbartholomay/chirpy/internal/auth"
 )
@@ -12,7 +12,6 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	type params struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
-		ExpiresInSeconds int `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -43,16 +42,12 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	type userWithToken struct{
 		User
 		Token string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 
 	user := getUserFromDBUser(dbUser)
 
-	expiresIn := time.Hour
-	if 0 < reqParams.ExpiresInSeconds && reqParams.ExpiresInSeconds < 3600{
-		expiresIn = time.Duration(reqParams.ExpiresInSeconds) * time.Second
-	}
-
-	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, expiresIn)
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret)
 	if err != nil {
 		return APIError{
 			Status: 401,
@@ -61,9 +56,23 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 		}
 	}
 
+	refreshToken, err := cfg.db.GetRefreshTokenByUser(req.Context(), user.ID)
+	if err != nil && err != sql.ErrNoRows{
+		return getDefaultApiError(err)
+	}
+
+	//if no token is found for the user, or if the token is expired, return a new token
+	refreshTokenString := ""
+	if err == sql.ErrNoRows || refreshToken.RevokedAt.Valid{
+		refreshTokenString = auth.MakeRefreshToken()
+	} else {
+		refreshTokenString = refreshToken.Token
+	}
+
 	resData := userWithToken{
 		User: user,
 		Token: token,
+		RefreshToken: refreshTokenString,
 	}
 
 

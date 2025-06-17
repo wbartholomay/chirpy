@@ -26,7 +26,7 @@ RETURNING token, created_at, updated_at, user_id, expires_at, revoked_at
 
 type CreateRefreshTokenParams struct {
 	Token  string
-	UserID uuid.NullUUID
+	UserID uuid.UUID
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
@@ -43,13 +43,13 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return i, err
 }
 
-const getRefreshTokenByUserID = `-- name: GetRefreshTokenByUserID :one
+const getRefreshTokenByUser = `-- name: GetRefreshTokenByUser :one
 SELECT token, created_at, updated_at, user_id, expires_at, revoked_at FROM refresh_tokens
 WHERE user_id = $1
 `
 
-func (q *Queries) GetRefreshTokenByUserID(ctx context.Context, userID uuid.NullUUID) (RefreshToken, error) {
-	row := q.db.QueryRowContext(ctx, getRefreshTokenByUserID, userID)
+func (q *Queries) GetRefreshTokenByUser(ctx context.Context, userID uuid.UUID) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshTokenByUser, userID)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Token,
@@ -58,6 +58,27 @@ func (q *Queries) GetRefreshTokenByUserID(ctx context.Context, userID uuid.NullU
 		&i.UserID,
 		&i.ExpiresAt,
 		&i.RevokedAt,
+	)
+	return i, err
+}
+
+const getUserFromRefreshToken = `-- name: GetUserFromRefreshToken :one
+SELECT id, created_at, updated_at, email, hashed_password FROM users
+WHERE users.id = (
+    SELECT refresh_tokens.user_id FROM refresh_tokens
+    WHERE token = $1
+)
+`
+
+func (q *Queries) GetUserFromRefreshToken(ctx context.Context, token string) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserFromRefreshToken, token)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.HashedPassword,
 	)
 	return i, err
 }

@@ -1,4 +1,4 @@
--- name: GetRefreshTokenByUserID :one
+-- name: GetRefreshTokenByUser :one
 SELECT * FROM refresh_tokens
 WHERE user_id = $1;
 
@@ -13,3 +13,10 @@ VALUES(
     NULL
 )
 RETURNING *;
+
+-- name: GetUserFromRefreshToken :one
+SELECT * FROM users
+WHERE users.id = (
+    SELECT refresh_tokens.user_id FROM refresh_tokens
+    WHERE token = $1
+);
