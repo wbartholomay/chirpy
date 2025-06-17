@@ -11,6 +11,7 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	type params struct {
 		Email string `json:"email"`
 		Password string `json:"password"`
+		ExpiresInSeconds int `json:"expires_in_seconds"`
 	}
 
 	decoder := json.NewDecoder(req.Body)
@@ -36,7 +37,26 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 		}
 	}
 
+	type userWithToken struct{
+		User
+		Token string `json:"token"`
+	}
+
 	user := getUserFromDBUser(dbUser)
-	respondWithJSON(w, 200, user)
+	token, err := auth.GetBearerToken(req.Header)
+	if err != nil {
+		return APIError{
+			Status: 401,
+			Msg: "Unauthorized",
+		}
+	}
+
+	resData := userWithToken{
+		User: user,
+		Token: token,
+	}
+
+
+	respondWithJSON(w, 200, resData)
 	return nil
 }
