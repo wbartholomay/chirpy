@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/wbartholomay/chirpy/internal/auth"
+	"github.com/wbartholomay/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request) error{
@@ -61,10 +62,18 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 		return getDefaultApiError(err)
 	}
 
-	//if no token is found for the user, or if the token is expired, return a new token
+	//if no token is found for the user, or if the token is expired, return a new token and insert it in db
 	refreshTokenString := ""
 	if err == sql.ErrNoRows || refreshToken.RevokedAt.Valid{
 		refreshTokenString = auth.MakeRefreshToken()
+		refreshTokenParams := database.CreateRefreshTokenParams{
+			Token: refreshTokenString,
+			UserID: user.ID,
+		}
+		_, dbErr := cfg.db.CreateRefreshToken(req.Context(), refreshTokenParams)
+		if dbErr != nil {
+			return getDefaultApiError(dbErr)
+		}
 	} else {
 		refreshTokenString = refreshToken.Token
 	}
