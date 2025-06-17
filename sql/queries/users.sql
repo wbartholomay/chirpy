@@ -25,3 +25,10 @@ UPDATE users
 SET email = $2, hashed_password = $3
 WHERE id = $1
 returning *;
+
+
+-- name: UpgradeToChirpyRed :one
+UPDATE users
+SET is_chirpy_red = true
+WHERE id = $1
+returning *;

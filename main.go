@@ -54,6 +54,7 @@ func main() {
 	mux.HandleFunc("POST /api/login", makeHandler(cfg.LoginUserHandler))
 	mux.HandleFunc("POST /api/refresh", makeHandler(cfg.RefreshTokenHandler))
 	mux.HandleFunc("POST /api/revoke", makeHandler(cfg.RevokeTokenHandler))
+	mux.HandleFunc("POST /api/polka/webhooks", makeHandler(cfg.UpgradeUserHandler))
 	mux.HandleFunc("GET /admin/metrics", makeHandler(cfg.MetricsHandler))
 	mux.HandleFunc("POST /admin/reset", makeHandler(cfg.ResetHandler))
 
