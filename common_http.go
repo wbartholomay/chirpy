@@ -27,6 +27,7 @@ func getDefaultApiError(err error) APIError{
 	}
 }
 
+
 func makeHandler(h apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := h(w, r); err != nil {

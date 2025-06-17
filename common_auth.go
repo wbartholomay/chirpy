@@ -7,7 +7,7 @@ import (
 	"github.com/wbartholomay/chirpy/internal/database"
 )
 
-func (cfg *apiConfig)  authenticateAndGetUser(req *http.Request) (database.User, error) {
+func (cfg *apiConfig) authenticateAndGetUser(req *http.Request) (database.User, error) {
 	token, err := auth.GetBearerToken(req.Header)
 	if err != nil {
 		return database.User{}, err
