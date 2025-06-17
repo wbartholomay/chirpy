@@ -5,9 +5,20 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/wbartholomay/chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) UpgradeUserHandler(w http.ResponseWriter, req *http.Request) error {
+	apiKey, err := auth.GetAPIKey(req.Header)
+	if err != nil || apiKey != cfg.polkaKey{
+		return APIError{
+			Status: 401,
+			ResponseMsg: "Unauthorized",
+			ErrorMsg: err.Error(),
+		}
+	}
+
+
 	type reqParams struct {
 		Event string `json:"event"`
 		Data struct{
@@ -18,7 +29,7 @@ func (cfg *apiConfig) UpgradeUserHandler(w http.ResponseWriter, req *http.Reques
 	decoder := json.NewDecoder(req.Body)
 	
 	reqData := reqParams{}
-	err := decoder.Decode(&reqData)
+	err = decoder.Decode(&reqData)
 	if err != nil {
 		return getDefaultApiError(err)
 	}
