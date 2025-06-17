@@ -95,7 +95,8 @@ func (cfg *apiConfig) ResetHandler(w http.ResponseWriter, req *http.Request) err
 	if cfg.platform != "dev" {
 		return APIError{
 			Status: 403,
-			Msg: "Forbidden",
+			ResponseMsg: "Forbidden",
+			ErrorMsg: "Cannot reset outside of dev environment.",
 		}
 	}
 

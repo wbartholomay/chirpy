@@ -6,16 +6,23 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
 	"github.com/wbartholomay/chirpy/internal/database"
 )
 
 func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Request) error {
 	type parameters struct {
 		Body string `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
 	}
 
+
+	user, err := cfg.authenticateAndGetUser(req)
+	if err != nil {
+		return APIError{
+			Status: 401,
+			ResponseMsg: "Unauthorized",
+			ErrorMsg: err.Error(),
+		}
+	}
 
 	decoder := json.NewDecoder(req.Body)
 	params := parameters{}
@@ -28,14 +35,14 @@ func (cfg *apiConfig) CreateChirpHandler(w http.ResponseWriter, req *http.Reques
 	if err != nil {
 		return APIError{
 			Status: http.StatusBadRequest,
-			Msg: err.Error(),
+			ResponseMsg: err.Error(),
+			ErrorMsg: err.Error(),
 		}
 	}
 
-
 	dbChirp, err := cfg.db.CreateChirp(req.Context(), database.CreateChirpParams{
 		Body: cleanedChirp,
-		UserID: params.UserID,
+		UserID: user.ID,
 	})
 	if err != nil {
 		return getDefaultApiError(err)

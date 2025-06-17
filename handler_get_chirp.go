@@ -33,7 +33,8 @@ func (cfg *apiConfig) GetChirpByIdHandler(w http.ResponseWriter, req *http.Reque
 	if err != nil {
 		return APIError{
 			Status: http.StatusNotFound,
-			Msg: err.Error(),
+			ResponseMsg: "Chirp not found",
+			ErrorMsg: err.Error(),
 		}
 	}
 

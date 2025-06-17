@@ -11,17 +11,19 @@ type apiFunc func(w http.ResponseWriter, r *http.Request) error
 
 type APIError struct {
 	Status int
-	Msg string
+	ResponseMsg string
+	ErrorMsg string
 }
 
 func (err APIError) Error() string {
-	return err.Msg
+	return err.ErrorMsg
 }
 
 func getDefaultApiError(err error) APIError{
 	return APIError{
 		Status: 500,
-		Msg: err.Error(),
+		ResponseMsg: "Internal server error",
+		ErrorMsg: err.Error(),
 	}
 }
 
@@ -34,12 +36,7 @@ func makeHandler(h apiFunc) http.HandlerFunc {
 				respondWithError(w, 500, "Something went wrong.")
 			} else {
 				slog.Error("API error", "err", e, "status", e.Status)
-				switch e.Status{
-					case 500:
-						respondWithError(w, 500, "Something went wrong.")
-					default:
-						respondWithError(w, e.Status, err.Error())
-				}
+				respondWithError(w, e.Status, e.ResponseMsg)
 			}
 		}
 	}

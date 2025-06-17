@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/wbartholomay/chirpy/internal/auth"
 )
@@ -25,7 +26,8 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	if err != nil {
 		return APIError{
 			Status: 401,
-			Msg: "incorrect email or password",
+			ResponseMsg: "incorrect email or password",
+			ErrorMsg: err.Error(),
 		}
 	}
 
@@ -33,7 +35,8 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	if err != nil {
 		return APIError{
 			Status: 401,
-			Msg: "incorrect email or password",
+			ResponseMsg: "incorrect email or password",
+			ErrorMsg: err.Error(),
 		}
 	}
 
@@ -43,11 +46,18 @@ func (cfg *apiConfig) LoginUserHandler (w http.ResponseWriter, req *http.Request
 	}
 
 	user := getUserFromDBUser(dbUser)
-	token, err := auth.GetBearerToken(req.Header)
+
+	expiresIn := time.Hour
+	if 0 < reqParams.ExpiresInSeconds && reqParams.ExpiresInSeconds < 3600{
+		expiresIn = time.Duration(reqParams.ExpiresInSeconds) * time.Second
+	}
+
+	token, err := auth.MakeJWT(user.ID, cfg.tokenSecret, expiresIn)
 	if err != nil {
 		return APIError{
 			Status: 401,
-			Msg: "Unauthorized",
+			ResponseMsg: "Unauthorized",
+			ErrorMsg: err.Error(),
 		}
 	}
 
